@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/mem"
 )
 
 // SystemStatus representa os status do sistema
@@ -53,6 +53,12 @@ func getSystemStatus() SystemStatus {
 		Temperature: temperature[0].Temperature,
 	}
 
+	if len(temperature) > 0 {
+    	systemStatus.Temperature = temperature[0].Temperature
+	} else {
+    	log.Println("Nenhuma informação de temperatura disponível.")
+	}
+
 	return systemStatus
 }
 
@@ -62,30 +68,24 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Obter os status do sistema
 	status := getSystemStatus()
 
-	// Converter para JSON
 	jsonData, err := json.Marshal(status)
 	if err != nil {
 		http.Error(w, "Erro ao converter para JSON", http.StatusInternalServerError)
 		return
 	}
 
-	// Responder com os dados do sistema em JSON
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonData)
 }
 
 func main() {
-	// Configurar o manipulador para o caminho '/status'
 	http.HandleFunc("/status", webhookHandler)
 
-	// Define a porta para ouvir
 	port := 8080
 
-	// Inicia o servidor na porta especificada
 	fmt.Printf("Servidor rodando em http://localhost:%d/status\n", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
